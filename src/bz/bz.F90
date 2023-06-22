@@ -14,14 +14,14 @@
 ! You should have received a copy of the GNU Lesser General Public License
 ! along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-program BZ 
+program BZ
   !***************************************************************
   !
   !   General Brillouin Zone plotting program.
   !   The main functions within BZ are:
   !
   !  1. To calculate the eigenvalue spectrum at specified points in the
-  !     electronic or phonon BZ, and to determine the space-group 
+  !     electronic or phonon BZ, and to determine the space-group
   !     irreducible representations.
   !
   !  2. To plot the eigenvalue spectrum along lines within the BZ.
@@ -29,18 +29,21 @@ program BZ
   !  3. To plot eigenvalue surfaces within a BZ.
   !
   !***************************************************************
+#ifdef IFORT
   use ifqwin
+#endif
   use common_common, only : tvec, id, numat, phonon, ir, iw, jobnam, &
     data_set_name, units, iw_new, nfirst, nlast, per_atom, mr1, mr2, mr3, bcc, &
     keywrd, coord, ref_coord, line, sec_det, nvecs, size_x, size_y, l_read_dat
   implicit none
   integer :: i, i99, itype, j, mvecs, natot, alloc_stat, io_stat
- 
+  integer :: iargc
+
   double precision, allocatable, dimension(:) :: MOPAC_sec_det
   logical :: exists, suffix = .false., is_brz = .false., is_dat = .false.
-  double precision, external :: reada 
+  double precision, external :: reada
   character      :: num
-  ! 
+  !
   iw = 6
 #ifdef MOPAC_F2003
   i = command_argument_count()
@@ -60,7 +63,8 @@ program BZ
     write(iw,*)" Second argument (optional): The name of the file that contains the 'walk' in"
     write(iw,*)" 'k'-space.  This file will be generated if the 'walk' is supplied at run-time."
     write(iw,'(/5x,a)')"Press ""RETURN"" to quit"
-    read (iw, "(Q,A)", end = 1100, err = 1100)i, line 
+    read (iw, "(A)", end = 1100, err = 1100) line
+    i = len_trim(line)
     call graphics(0.0, 0.0, 100)
     stop
   else
@@ -69,12 +73,12 @@ program BZ
 #else
     call getarg(1, jobnam)
 #endif
-    j = len_trim(jobnam) 
+    j = len_trim(jobnam)
     if (jobnam(j - 3:j - 3) == ".") then
       suffix = .true.
       keywrd = jobnam(j - 2:)
       call upcase(keywrd(:3))
-      is_brz = (keywrd(:3) == "BRZ")     
+      is_brz = (keywrd(:3) == "BRZ")
       jobnam = jobnam(:j - 4)
     end if
     if (i > 1) then
@@ -84,13 +88,13 @@ program BZ
 #else
       call getarg(2, data_set_name)
 #endif
-      i = len_trim(data_set_name) 
+      i = len_trim(data_set_name)
       if (i > 4) then
         if (data_set_name(i - 3:i - 3) == ".") then
           suffix = .true.
           keywrd = data_set_name(i - 2:)
           call upcase(keywrd(:3))
-          is_dat = (keywrd(:3) == "DAT")     
+          is_dat = (keywrd(:3) == "DAT")
           data_set_name = data_set_name(:i - 4)
         end if
       end if
@@ -102,7 +106,7 @@ program BZ
         else
           suffix = .false.
         end if
-      end if    
+      end if
       if (.not. suffix) then
 !
 !  Check that the data_set_name applies to the stored instruction set
@@ -136,10 +140,11 @@ program BZ
     call graphics(0.0, 0.0, 1)
     write (iw, '(/10x,a,/)') " File '"//trim(jobnam)//".brz' does not exist."
     write(iw,'(/5x,a)')"Press ""RETURN"" to quit"
-    read (iw, "(Q,A)", end = 1100, err = 1100)i, line 
+    read (iw, "(A)", end = 1100, err = 1100) line
+    i = len_trim(line)
     call graphics(0.0, 0.0, 100)
-    stop    
-  end if  
+    stop
+  end if
   open (unit = 18, file = trim(jobnam)//".brz", status = "OLD", iostat = i99)
   if (i99 /= 0) then
     open (unit = iw_new, file = trim(data_set_name)//".txt", form = "FORMATTED", status = "UNKNOWN", iostat = i99)
@@ -164,7 +169,7 @@ program BZ
     write(iw,*)" Unable to allocate 'MOPAC_sec_det'"
     stop
   endif
-  read (18, *, iostat=io_stat) MOPAC_sec_det 
+  read (18, *, iostat=io_stat) MOPAC_sec_det
   if (io_stat /= 0) then
    write (6,'(/,a)') " File exists, but the second set of data"
    write (6,'(a,i7,a)') " (the secular determinant) could not be read."
@@ -213,12 +218,12 @@ program BZ
 ! All <file>.brz now read in. Read in data on what BZ has to do.
 !
   call graphics(0.0, 0.0, 1)
-  if (l_read_dat) then 
+  if (l_read_dat) then
     call graphics(0.0, 0.0, 97)
     write (iw, "(A)") &
        & "     Do you want to calculate a point [0], ", &
        & "              or draw band-structures [1], "
-    if (id /= 1) write (iw, "(A,\)") "              or draw energy surfaces [2], "
+    if (id /= 1) write (iw, "(A,/)") "              or draw energy surfaces [2], "
  !   write (iw, "(A)") " or do you want advice on diagnostics [3]?"
   else
     open(unit = ir, file = trim(data_set_name)//".dat", status = "OLD", iostat = i99)
@@ -230,30 +235,30 @@ program BZ
         write(iw,'(/10x,a)') " File: '"//trim(data_set_name)//".dat' does not exist"
       end if
       write(iw,'(/5x,a)')"Press ""RETURN"" to quit"
-      read(iw,'(a)') num 
+      read(iw,'(a)') num
       if (num /= "{") call graphics(0.0, 0.0, 100)
       stop
     end if
 !
 !  Copy everything from the input file, and put it in a scratch file
 !
-     open(unit=99, status='SCRATCH', iostat = io_stat) 
+     open(unit=99, status='SCRATCH', iostat = io_stat)
      do
        do
          read(ir,'(a)', iostat = io_stat)line
          if (line(1:1) /= "*") exit
-       end do       
+       end do
        if (io_stat /= 0) exit
        write(99,'(a)')trim(line)
      end do
      close (ir)
      rewind(99)
      ir = 99
-  end if  
+  end if
 !
 ! if  data-set <file>.dat supplied, then ir = 99, otherwise ir = 6
 !
-  read (ir, "(Q,A)", end = 1100, err = 1100)i, line 
+  read (ir, "(A)", end = 1100, err = 1100) line
 !
 ! Keywords being read in, so allow room for extra data
 !
@@ -264,13 +269,13 @@ program BZ
     line(i:) = ": Do you want to calculate a point [0], or draw band-structures [1]"
   end if
   call write_keystrokes(line, len_trim(line))
-  read(line, '(a80)') keywrd 
+  read(line, '(a80)') keywrd
   call upcase(keywrd)
   if (index(keywrd," OPS")   + index(keywrd," SEC")    + index(keywrd," FRACT")  + index(keywrd," ROTSEC") + &
       index(keywrd," TRANS") + index(keywrd," SYMSEC") + index(keywrd," PRTVEC") + index(keywrd," ROTFOK") + &
       index(keywrd," VECT") + index(keywrd," SYMTRZ") /= 0) &
     open (unit = iw_new, file = trim(data_set_name)//".txt", form = "FORMATTED", status = "UNKNOWN", iostat = i99)
-   call setup(MOPAC_sec_det, nvecs, sec_det)  
+   call setup(MOPAC_sec_det, nvecs, sec_det)
 !
 !  Rotate so that the first translation vector is along the "x" axis,
 !  and, if it exists, the second translation vector is in the "x-y" plane.
@@ -284,7 +289,7 @@ program BZ
     size_x = real(reada(keywrd, i))
     size_y = size_x
   end if
-  call orient(nvecs, sec_det, natot, coord) 
+  call orient(nvecs, sec_det, natot, coord)
   itype = Nint (reada (keywrd, 1))
 !
 ! Setup is now complete.  Use graphics for lines and surfaces
@@ -342,4 +347,4 @@ program BZ
     write(16,'(a)', iostat = status) text
     return
   end subroutine write_keystrokes
-  
+
