@@ -35,7 +35,6 @@ subroutine surfac (nvecs, fcells)
   logical :: first = .true., opend, exists
   character :: q*1, graph_name*200
   double precision, allocatable :: onebnd(:)
-  external sleep
 !
 !.. Equivalences ..
   equivalence (xyzp(3), pz), (xyzp(2), py), (xyzp(1), px)
