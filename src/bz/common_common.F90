@@ -64,7 +64,7 @@ module common_common
     jm,                 & !
     isurf,              & !
     dummy_i             !   Not used: dummy_i is present to terminate this block
-  integer*2 ::          &
+  integer(2) ::         &
     top_left_x,         &
     top_left_y
   character ::          &
