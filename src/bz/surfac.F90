@@ -36,15 +36,15 @@ subroutine surfac (nvecs, fcells)
   character :: q*1, graph_name*200
   double precision, allocatable :: onebnd(:)
   external sleep
-! 
-!.. Equivalences .. 
+!
+!.. Equivalences ..
   equivalence (xyzp(3), pz), (xyzp(2), py), (xyzp(1), px)
   equivalence (xyzc(3), cz), (xyzc(2), cy), (xyzc(1), cx)
   allocate(grid(npts,npts,nvecs), v(nvecs**2))
   allocate(onebnd((npts*2)**2))
-! 
+!
 ! ... Executable Statements ...
-! 
+!
   step = 1.0d0 / (npts-1)
   iok = 1
   inquire (file=jobnam(:len_trim(jobnam))//".bnd", exist = exists)
@@ -54,19 +54,19 @@ subroutine surfac (nvecs, fcells)
     if (.not. l_read_dat .and. index(line, ": Enter k-space") /= 0) then
       rewind (ir)
       read(ir, '(a)',  iostat=i) line
-    else       
+    else
       line(20:) = ": Start a new surface [1], or use an old one [2]?"
-      call write_keystrokes(line, len_trim(line)) 
+      call write_keystrokes(line, len_trim(line))
       read(line, *) iok
       if (iok == 1 .and. .not. l_read_dat) then
         rewind (ir)
         read(ir,*,  iostat=i) line
-      end if 
-    end if        
+      end if
+    end if
   end if
   call graphics (0.0, 0.0, 6)
   if (iok == 2) then
-    i = len_trim(jobnam) 
+    i = len_trim(jobnam)
     open (unit = 17, file = jobnam(:i)//".bnd", status = "OLD", &
          & form = "FORMATTED", iostat = i99)
     if (i99 /= 0) then
@@ -95,12 +95,13 @@ subroutine surfac (nvecs, fcells)
   else
     do k = 1, 10
       write (iw, '(a,i2,a)') "Enter k-space coordinates for the center of the plot,", id, " numbers"
-      read (6, "(Q,A)", iostat = j)i, line 
+      read (6, "(A)", iostat = j)i, line
+      i = len_trim(line)
       read(line,*, iostat = j) px, py, pz
       if (j == 0) exit
       i = len_trim(line)
       line(20:) = ": Enter k-space coordinates for the center of the plot"
-      call write_keystrokes(line, len_trim(line)) 
+      call write_keystrokes(line, len_trim(line))
       read(line,*, iostat = j)(xyzp(i), i = 1, id)
       if (j == 0) exit
     end do
@@ -110,7 +111,7 @@ subroutine surfac (nvecs, fcells)
         read(6, '(a80)', iostat = j) line
         i = len_trim(line)
         line(20:) = ": Enter vector perpendicular to plot"
-        call write_keystrokes(line, len_trim(line)) 
+        call write_keystrokes(line, len_trim(line))
         read(line, *, iostat = j) (xyzc(i), i = 1, id)
         if (j == 0) exit
       else
@@ -129,7 +130,7 @@ subroutine surfac (nvecs, fcells)
       read(6, '(a80)', iostat = j) line
        i = len_trim(line)
        line(20:) = ": Enter length from center to the middle of one edge in reciprocal space units"
-      call write_keystrokes(line, len_trim(line)) 
+      call write_keystrokes(line, len_trim(line))
       read(line, *, iostat = j) size
       if (size < 1.d-4) cycle
       if (j == 0) exit
@@ -221,7 +222,7 @@ subroutine surfac (nvecs, fcells)
     end if
   end if
   q = char(ichar("1") + int(log10(nvecs*1.0)))
-  outer_loop: do 
+  outer_loop: do
     do
       if(l_read_dat) write (iw, "(A,I"//q//",a)") "Pick an energy surface in the range 1 - ", nvecs, &
         ", 0 to stop"
@@ -230,7 +231,7 @@ subroutine surfac (nvecs, fcells)
       if (.not. l_read_dat .and. index(line, ": Pick an") == 0) cycle
       i = len_trim(line)
       write(line(20:),'(a,i'//q//',a)')": Pick an energy surface in the range 1 - ", nvecs, ", 0 to stop"
-      call write_keystrokes(line, len_trim(line)) 
+      call write_keystrokes(line, len_trim(line))
       read(line, *, end = 50, err = 50) isurf
       if (isurf > nvecs .or. isurf < 1) then
         if (isurf /= 0) then
@@ -281,7 +282,7 @@ subroutine surfac (nvecs, fcells)
               & + 0.5d0*(grid(i,j-1,isurf) + grid(i,j+1,isurf) - 2.d0*grid(i,j,isurf))*x2**2
             end if
           end if
-   
+
           if ( x < grid(i-1,j,isurf)   .and. x < grid(i+1,j,isurf) .and. &
           &    x < grid(i,j-1,isurf)   .and. x < grid(i,j+1,isurf)) then
             if ( x < grid(i-1,j+1,isurf) .and. x < grid(i+1,j-1,isurf) .and. &
@@ -296,7 +297,7 @@ subroutine surfac (nvecs, fcells)
               & (grid(i,j-1,isurf) + grid(i,j+1,isurf) - 2.d0*grid(i,j,isurf))
               stepy = 1.d0 - (j-1+x2)/(npts-1)
               nmin = Min(nmin + 1, 1000)
-              minima(1:3,nmin) = top_l(:) - stepx*(top_l(:) - top_r(:)) - stepy*(top_l(:) - bottom_l(:)) 
+              minima(1:3,nmin) = top_l(:) - stepx*(top_l(:) - top_r(:)) - stepy*(top_l(:) - bottom_l(:))
               minima(4,nmin) = x + 0.5d0*(grid(i,j-1,isurf) - grid(i,j+1,isurf))*x2 &
               & + 0.5d0*(grid(i,j-1,isurf) + grid(i,j+1,isurf) - 2.d0*grid(i,j,isurf))*x2**2
               minima(5,nmin) = stepx
@@ -324,7 +325,7 @@ subroutine surfac (nvecs, fcells)
                 maxima(4,j) = -1000.d0
               else
                 maxima(4,i) = -1000.d0
-              end if                   
+              end if
             end if
           end do
         end do
@@ -356,7 +357,7 @@ subroutine surfac (nvecs, fcells)
                 minima(4,j) = -1000.d0
               else
                 minima(4,i) = -1000.d0
-              end if                   
+              end if
             end if
           end do
         end do
@@ -395,7 +396,7 @@ subroutine surfac (nvecs, fcells)
         end do
       end do
       write(line,'(a,a,i2.2,a)')trim(data_set_name)," surface number ",isurf," notes.txt"
-      inquire(unit=iw_new, opened=opend) 
+      inquire(unit=iw_new, opened=opend)
       if (opend) close (iw_new)
       open(unit = iw_new, file = trim(line))
       if( nmax > 0 )then
@@ -478,7 +479,7 @@ subroutine surfac (nvecs, fcells)
       end if
       cntval = step * Int (xmin/step) - step
       if (first) then
-! 
+!
 !  One-time setup
 !
        first = .false.
@@ -538,14 +539,14 @@ subroutine surfac (nvecs, fcells)
 !
 ! Draw a box in black
 !
-      
+
       call graphics (0.0, 0.0, 98)  ! Select black
       call graphics (0.0, 0.0, 2)
       call graphics (0.0, 2.0, 3)
       call graphics (2.0, 2.0, 3)
       call graphics (2.0, 0.0, 3)
       call graphics (0.0, 0.0, 3)
-      do 
+      do
         if (line(1:4) == "EXIT") exit
         call sleep(1)
       end do
@@ -553,8 +554,8 @@ subroutine surfac (nvecs, fcells)
 !  Write raw data in a form suitable for use in Microsoft Excel
 !
       write(graph_name,'(a,a,i2.2,a)')trim(data_set_name)," surface number ",isurf,".txt"
-      write(iw,'(/5x,a)')"Writing suface to file """//trim(graph_name)//""""      
-      inquire(unit=18, opened=opend) 
+      write(iw,'(/5x,a)')"Writing suface to file """//trim(graph_name)//""""
+      inquire(unit=18, opened=opend)
       if (opend) close (18)
       open(unit = 18, file = graph_name)
       write(18,'(8x,200f8.3)')(i*1.d0, i = 1,mpts)
@@ -562,7 +563,7 @@ subroutine surfac (nvecs, fcells)
         write(18,'(201f8.3)')i*1.d0,(onebnd((i-1)*mpts + j), j = 1, mpts)
       end do
       call sleep(2)
-    end do    
+    end do
   end do outer_loop
 50 continue
   if (ir == 99) then
