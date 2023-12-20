@@ -389,12 +389,11 @@
       k1 = k 
       j2 = min0(1,k1) 
       do k = k1, j2, -1 
-        if (x(k) < xmin) go to 20 
+        if (x(k) < xmin) exit
         x(k+1) = x(k) 
         f(k+1) = f(k) 
         df(k+1) = df(k) 
       end do 
-   20 continue 
       x(k+1) = xmin 
       f(k+1) = fmin 
       df(k+1) = dfmin 
