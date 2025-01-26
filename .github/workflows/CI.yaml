@@ -43,6 +43,10 @@ jobs:
 
       - name: Install dependencies with PyPI
         run: pip install numpy
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libblas-dev liblapack-dev
 
       - name: Configure MOPAC with CMake
         run: |
